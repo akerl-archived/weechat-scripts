@@ -23,9 +23,6 @@
 #   0.0.1 - Initial functionality
 #   0.0.2 - Cleaned up code
 
-$rules = Hash.new {|h, k| h[k] = [] }
-$rules['ALL'] = []
-
 def weechat_init
     Weechat.register(
         'regex_highlight',
@@ -68,6 +65,7 @@ def dump_rules(file, key, rules)
 end
 
 def save_conf
+    $rules ||= Hash.new {|h, k| h[k] = [] }
     open($Config_Path, 'w') do |file|
         rules = $rules.dup
         dump_rules(file, 'ALL', rules.delete('ALL'))
@@ -77,7 +75,9 @@ def save_conf
 end
 
 def load_conf
+    $rules = Hash.new {|h, k| h[k] = [] }
     open($Config_Path) do |file|
+        key = nil
         file.each_line do |line|
             next if line == "\n"
             line = line.rstrip
@@ -119,7 +119,7 @@ def command_handler(data, buffer, args)
 end
 
 def highlight_check(data, modifier, modifier_data, string)
-    return string unless modifier_data[0,4] == 'irc;'
+    return string unless modifier_data.match(/irc;\w+\.[#\w]+;.+/)
 
     data = modifier_data.split(';')
     tags = data[2].split(',')
