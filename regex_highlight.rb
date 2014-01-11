@@ -30,7 +30,7 @@ def weechat_init
         '0.0.2',
         'MIT',
         'Provides more flexible highlighting rules',
-        'unload_script',
+        '',
         '',
     )
     $Config_Path = Weechat.info_get('weechat_dir', '') + '/regex_highlight.conf'
