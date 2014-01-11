@@ -33,7 +33,7 @@ def weechat_init
         'unload_script',
         '',
     )
-    $Config_Path = Weechat.info_get('weechat_dir', '') + '/highlights.conf'
+    $Config_Path = Weechat.info_get('weechat_dir', '') + '/regex_highlight.conf'
     load_script
     Weechat::WEECHAT_RC_OK
 end
@@ -51,11 +51,6 @@ def load_script
         '',
     )
     Weechat.hook_modifier('weechat_print', 'highlight_check', '')
-end
-
-def unload_script
-    Weechat.unhook('command_handler')
-    Weechat.unhook('highlight_check')
 end
 
 def dump_rules(file, key, rules)
