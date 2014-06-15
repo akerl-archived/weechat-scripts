@@ -23,6 +23,7 @@
 # Changelog:
 #   0.0.1 - Initial functionality
 #   0.0.2 - Cleaned up code
+#   0.1.0 - Classified, cleaned up bugs
 
 require 'yaml'
 
@@ -32,28 +33,29 @@ class RegexConfig
   def initialize
     @path = Weechat.info_get('weechat_dir', '') + '/regex_highlight.conf'
     @rules = Hash.new { |h, k| h[k] = [] }
-    File.exist?(@path) ? reload : save
+    reload if File.exist?(@path)
   end
 
   def save
-    File.open(@ath, 'w') { |fh| fh << @rules.to_yaml }
+    File.open(@path, 'w') { |fh| fh << @rules.to_yaml }
     Weechat.print('', "Saved regex_highlight config to #{@path}")
   end
 
   def reload
-    @rules = File.read(@path) { |file| YAML.load file }
+    @rules.clear
+    @rules.merge! File.open(@path) { |file| YAML.load file }
     Weechat.print('', "Loaded regex_highlight config from #{@path}")
   end
 
   def list
+    Weechat.print('', 'No rules loaded') if @rules.empty?
     @rules.each do |channel, ruleset|
       Weechat.print('', "Patterns for #{channel}")
       ruleset.each { |rule| Weechat.print('', rule) }
     end
   end
 
-  def add(data)
-    channel, regex = parse data
+  def add(channel, regex)
     if @rules[channel].include? regex
       Weechat.print('', "Regex already configured for ##{channel}: #{regex}")
     else
@@ -62,8 +64,7 @@ class RegexConfig
     end
   end
 
-  def remove(data)
-    channel, regex = parse data
+  def remove(channel, regex)
     if @rules[channel].include? regex
       @rules[channel].delete(regex)
       Weechat.print('', "Removed regex for channel ##{channel}: #{regex}")
@@ -80,19 +81,13 @@ class RegexConfig
     end
     false
   end
-
-  private
-
-  def parse
-    Regexp.last_match.values_at 'channel', 'regex'
-  end
 end
 
 def weechat_init
   Weechat.register(
     'regex_highlight',
     'Les Aker <me@lesaker.org>',
-    '0.0.2',
+    '0.1.0',
     'MIT',
     'Provides more flexible highlighting rules',
     '',
@@ -125,8 +120,10 @@ def command_handler(_, _, args)
   when 'save' then $config.save
   when 'load' then $config.reload
   when 'list' then $config.list
-  when /^add #?(?<channel>[\w]+) (?<regex>.*)/ then $config.add
-  when /^del #?(?<channel>[\w]+) (?<regex>.*)/ then $config.remove
+  when /^add #?(?<channel>[\w]+) (?<regex>.*)/
+    $config.add Regexp.last_match['channel'], Regexp.last_match['regex']
+  when /^del #?(?<channel>[\w]+) (?<regex>.*)/
+    $config.remove Regexp.last_match['channel'], Regexp.last_match['regex']
   else
     Weechat.print('', 'Syntax: [save] | [load] | [list] | [[add|del] channel pattern]')
   end
@@ -134,21 +131,18 @@ def command_handler(_, _, args)
 end
 
 def parse_modifiers(modifiers)
-  data = modifiers.split(';')
-  tags = data[2].split(',')
-  server, _, channel = data[1].partition('.').values_at(0, 2)
+  data = modifiers.split ';'
+  tags = data.last.split ','
+  server, channel = data[1].split '.', 2
   [server, channel, tags]
 end
 
 def highlight_check(_, _, modifier_data, string)
   return string unless modifier_data.match(/irc;\w+\.[#\w]+;.+/)
-
   server, channel, tags = parse_modifiers(modifier_data)
-
   return string unless $config.match channel, string
 
-  tags[1] = 'notify_highlight' if tags[1] == 'notify_message'
-  new_tags = tags.join(',')
+  new_tags = tags.join(',').sub 'notify_message', 'notify_highlight'
   buffer = Weechat.info_get('irc_buffer', "#{server},#{channel}")
   Weechat.print_date_tags(buffer, 0, new_tags, string)
   ''
