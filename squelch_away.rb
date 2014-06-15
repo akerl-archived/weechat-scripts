@@ -32,7 +32,7 @@ def weechat_init
   Weechat.register(
     'squelch_away',
     'Les Aker <me@lesaker.org>',
-    '0.0.1',
+    '0.1.0',
     'MIT',
     'Squelch repetitive away messages',
     '',
