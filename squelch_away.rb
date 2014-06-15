@@ -21,8 +21,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Changelog:
-#   0.1.0 - Fixed functionality, cleaned style
 #   0.0.1 - Initial functionality
+#   0.1.0 - Fixed functionality, cleaned style
 
 MATCHER = /^\x1905--\t\x1928\[\x1914(?<name>\S+)\x1928\] \x1901is away: (?<msg>.*)$/
 
