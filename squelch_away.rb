@@ -44,10 +44,6 @@ def load_script
     Away_Codes.each { |code| Weechat.hook_modifier("irc_in_#{code}", 'squelch_check', '') }
 end
 
-def unload_script
-    Weechat.unhook('squelch_check')
-end
-
 def squelch_check(data, modifier, modifier_data, string)
     open('/home/akerl/b.txt', 'a') do |file|
         file << "DATA: #{data}\n"
