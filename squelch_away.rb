@@ -1,4 +1,5 @@
 # squelch_away.rb
+# rubocop:disable Style/LineLength, Style/GlobalVars
 
 # Copyright (c) 2014 Les Aker <me@lesaker.org>
 
@@ -20,36 +21,40 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Changelog:
+#   0.1.0 - Fixed functionality, cleaned style
 #   0.0.1 - Initial functionality
 
-$history = {}
-Away_Codes = [301, 305, 306, 'away']
+MATCHER = /^\x1905--\t\x1928\[\x1914(?<name>\S+)\x1928\] \x1901is away: (?<msg>.*)$/
+
+$seen = {}
 
 def weechat_init
-    Weechat.register(
-        'squelch_away',
-        'Les Aker <me@lesaker.org>',
-        '0.0.1',
-        'MIT',
-        'Squelch repetitive away messages',
-        'unload_script',
-        '',
-    )
-    load_script
-    Weechat::WEECHAT_RC_OK
+  Weechat.register(
+    'squelch_away',
+    'Les Aker <me@lesaker.org>',
+    '0.0.1',
+    'MIT',
+    'Squelch repetitive away messages',
+    '',
+    ''
+  )
+  load_script
 end
 
 def load_script
-    open('/home/akerl/b.txt', 'a') { |file| file << "shit\n" }
-    Away_Codes.each { |code| Weechat.hook_modifier("irc_in_#{code}", 'squelch_check', '') }
+  Weechat.hook_modifier 'weechat_print', 'squelch_check', ''
+  Weechat::WEECHAT_RC_OK
 end
 
-def squelch_check(data, modifier, modifier_data, string)
-    open('/home/akerl/b.txt', 'a') do |file|
-        file << "DATA: #{data}\n"
-        file << "MODIFIER: #{modifier}\n"
-        file << "MOD_DATA: #{modifier_data}\n"
-        file << "STRING: #{string}\n"
-    end
-    string
+def squelch_check(_, _, mod_data, line)
+  return line if mod_data.match('_')
+  result = line.match MATCHER
+  return line unless result
+  already_seen?(result['name'], result['msg']) ? '' : line
+end
+
+def already_seen?(name, msg)
+  return true if $seen[name] == msg
+  $seen[name] = msg
+  false
 end
