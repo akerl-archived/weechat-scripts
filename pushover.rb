@@ -30,7 +30,8 @@ DEFAULTS = {
   appkey: nil,
   devicename: nil,
   interval: '10', # seconds
-  priority: '1',
+  pm_priority: '1',
+  hilight_priority: '1',
   onlywhenaway: '0',
   enabled: '1'
 }
@@ -176,7 +177,7 @@ class PushoverConfig
       resp = client.send(
         title: message.buffer,
         message: message.clean_text,
-        priority: @options[:priority]
+        priority: @options[message.is_pm ? :pm_priority : :hilight_priority]
       )
       parse_response resp
     end
