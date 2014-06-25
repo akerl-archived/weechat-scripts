@@ -41,8 +41,8 @@ URL = URI.parse('https://api.pushover.net/1/messages.json')
 class PushoverClient
   attr_reader :client
 
-  def initialize(appkey, userkey, device)
-    create_template appkey, userkey, device
+  def initialize(params)
+    create_template params
     create_client
   end
 
@@ -60,12 +60,12 @@ class PushoverClient
 
   private
 
-  def create_template(appkey, userkey, device)
+  def create_template(params)
     @template = {
-      appkey: appkey,
-      userkey: userkey
+      appkey: params[:appkey],
+      userkey: params[:userkey]
     }
-    @template[:device] = device if device
+    @template[:device] = params[:device] if params[:device]
   end
 
   def create_client
@@ -158,7 +158,7 @@ class PushoverConfig
   end
 
   def send_messages
-    client = PushoverClient.new @options.values_at(:appkey, :userkey, :device)
+    client = PushoverClient.new @options
     @queue = @queue.drop_while do |message|
       client.send(
         title: message.buffer,
