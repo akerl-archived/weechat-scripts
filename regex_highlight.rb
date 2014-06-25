@@ -141,8 +141,7 @@ def weechat_init
     '0.1.0',
     'MIT',
     'Provides more flexible highlighting rules',
-    '',
-    ''
+    '', ''
   )
   $Regex_Highlight = RegexConfig.new
   Weechat::WEECHAT_RC_OK
