@@ -82,7 +82,7 @@ class PushoverMessage
   attr_reader :buffer, :nick, :text, :is_pm
 
   def initialize(buffer, nick, text)
-    @buffer_name, @is_pm = PushoverMessage.parse_buffer buffer
+    @buffer, @is_pm = PushoverMessage.parse_buffer buffer
     @nick = nick
     @text = text
   end
