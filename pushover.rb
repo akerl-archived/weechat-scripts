@@ -137,7 +137,7 @@ class PushoverConfig
       away_msg = Weechat.buffer_get_string buffer, 'localvar_away'
       return Weechat::WEECHAT_RC_OK if away_msg && away_msg.length > 0
     end
-    @queue << Message.new(buffer, nick, text)
+    @queue << PushoverMessage.new(buffer, nick, text)
     Weechat::WEECHAT_RC_OK
   end
 
