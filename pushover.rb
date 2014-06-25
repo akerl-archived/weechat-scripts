@@ -95,8 +95,6 @@ class PushoverMessage
   end
 
   class << self
-    private
-
     def parse_buffer(buffer)
       name = Weechat.buffer_get_string(buffer, 'full_name').split('.').last
       type = Weechat.buffer_get_string(buffer, 'localvar_type')
