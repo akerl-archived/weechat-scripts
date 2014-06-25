@@ -31,10 +31,24 @@ DEFAULTS = {
   devicename: nil,
   interval: '10', # seconds
   priority: '1',
-  onlywhenaway: 0,
-  enabled: 1
+  onlywhenaway: '0',
+  enabled: '1'
 }
 URL = URI.parse('https://api.pushover.net/1/messages.json')
+
+##
+# API rate limit calculator
+class RateCalc
+  def initialize(resp, interval)
+    seconds_left = resp['X-Limit-App-Reset'].to_i - Time.now.to_i
+    @potential = seconds_left / interval.to_i
+    @remaining = resp['X-Limit-App-Remaining'].to_i
+  end
+
+  def value
+    @remaining - @potential
+  end
+end
 
 ##
 # Handler for Pushover API
@@ -62,8 +76,8 @@ class PushoverClient
 
   def create_template(params)
     @template = {
-      appkey: params[:appkey],
-      userkey: params[:userkey]
+      token: params[:appkey],
+      user: params[:userkey]
     }
     @template[:device] = params[:device] if params[:device]
   end
@@ -128,7 +142,7 @@ class PushoverConfig
 
   def message_hook(*args)
     buffer, nick, text = args.values_at(1, 6, 7)
-    unless Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
+    if Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
       return Weechat::WEECHAT_RC_OK
     end
     unless Weechat.config_string_to_boolean(@options[:onlywhenaway]).to_i.zero?
@@ -141,7 +155,6 @@ class PushoverConfig
 
   def timer_hook(*_)
     return Weechat::WEECHAT_RC_OK if @queue.empty?
-    @health_check = -5 unless [0, 200].include? @health_check
     if @health_check < 0
       @health_check += 1
       return Weechat::WEECHAT_RC_OK
@@ -160,12 +173,40 @@ class PushoverConfig
   def send_messages
     client = PushoverClient.new @options
     @queue = @queue.drop_while do |message|
-      client.send(
+      resp = client.send(
         title: message.buffer,
         message: message.clean_text,
         priority: @options[:priority]
       )
+      parse_response resp
     end
+  end
+
+  def parse_response(resp)
+    case resp.code
+    when /200/
+      @rate_calc = RateCalc.new(resp, @options[:interval]).value
+    when /429/
+      disable! 'Pushover message limit exceeded'
+    when /4\d\d/
+      disable! "Pushover error: #{resp.body}"
+    else
+      server_failure!
+    end
+  end
+
+  def disable!(reason)
+    Weechat.print '', reason
+    Weechat.print '', 'Disabling Pushover notifications'
+    @options[:enabled] = '0'
+    @queue.clear
+    false
+  end
+
+  def server_failure!
+    Weechat.print '', 'Pushover server error detected, delaying notifications'
+    @health_check -= 5
+    false
   end
 
   def set(option, value)
