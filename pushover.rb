@@ -32,9 +32,10 @@ DEFAULTS = {
   interval: '20', # seconds
   priority: '1',
   onlywhenaway: 0,
-  enabled: 1,
+  enabled: 1
 }
 URL = URI.parse('https://api.pushover.net/1/messages.json')
+Message = Struct.new :buffer, :nick, :message, :is_pm
 
 class PushoverConfig
   def initialize
@@ -57,7 +58,7 @@ class PushoverConfig
     Weechat::WEECHAT_RC_OK
   end
 
-  def message_hook(_, buffer, _, _, visible, hilight, prefix, message)
+  def message_hook(_, buffer, _, _, _, _, nick, message)
     unless Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
       return Weechat::WEECHAT_RC_OK
     end
@@ -66,16 +67,15 @@ class PushoverConfig
       return Weechat::WEECHAT_RC_OK if away_msg && away_msg.length > 0
     end
 
-    buffer_type = Weechat.buffer_get_string buffer, 'localvar_type'
-    privmsg = (buffer_type == 'private')
+    is_pm = parse_buffer buffer
 
     buffer_name = Weechat.buffer_get_string buffer, 'full_name'
-    @queue << [buffer_name, privmsg, "<#{prefix}> #{message}"]
+    @queue << Message.new(buffer_name, nick, message, is_pm)
   end
 
   def timer_hook(*_)
     return Weechat::WEECHAT_RC_OK if @queue.empty?
-    @health_check = -5 unless [0, 200].include? @health_check 
+    @health_check = -5 unless [0, 200].include? @health_check
     if @health_check < 0
       @health_check += 1
       return Weechat::WEECHAT_RC_OK
@@ -91,23 +91,51 @@ class PushoverConfig
   end
 
   def send_messages
-    remaining = @queue.drop_while do |message|
-      send_message *message, priority
-    rescue
-      false
+    @queue.drop_while do |message|
+      begin
+        send_message message.buffer, build_message(message), @options[:priority]
+        true
+      rescue
+        false
+      end
     end
   end
 
-  def send_message
+  def build_message(message)
+    text = ''
+    text << "<#{message.nick}> " unless message.is_pm
+    text << message.message
+    text.slice 0, (500 - message.buffer.length)
+  end
+
+  def send_message(buffer, message, priority)
+    data = {
+      token: @options[:appkey],
+      user: @options[:userkey],
+      title: buffer,
+      message: message,
+      priority: priority
+    }
+    options[:device] = @options[:device] if @options[:device]
+    _send data
+  end
+
+  def _send(data)
+    req = Net::HTTP::Post.new URL.path
+    req.set_form_data data
+    res = Net::HTTP.new URL.host, URL.port
+    res.use_ssl = true
+    res.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    res.start { |http| http.request req }
   end
 
   def set(option, value)
-    unless @options.keys.include? option.to_sym
-      Weechat.print '', "Available options: #{@options.keys.join ', '}"
-    else
+    if @options.keys.include? option.to_sym
       @options[option.to_sym] = value
       Weechat.print '', "Pushover: set #{option} to #{value}"
       reload_hooks if [:interval].include? option.to_sym
+    else
+      Weechat.print '', "Available options: #{@options.keys.join ', '}"
     end
   end
 
@@ -122,14 +150,12 @@ class PushoverConfig
   def load_hooks
     @hooks = {
       command: Weechat.hook_command(
-        'pushover',
-        'Control Pushover options',
-        'set OPTION VALUE', '',
-        "#{completion_text}",
+        'pushover', 'Control Pushover options',
+        'set OPTION VALUE', '', "#{completion_text}",
         'command_hook', ''
       ),
-      message: Weechat.hook_print '', 'irc_privmsg', '', 1, 'message_hook', '',
-      timer: Weechat.hook_timer @options[:interval].to_i * 1000, 0, 0, 'timer_hook', ''
+      message: Weechat.hook_print('', 'irc_privmsg', '', 1, 'message_hook', ''),
+      timer: Weechat.hook_timer(@options[:interval].to_i * 1000, 0, 0, 'timer_hook', '')
     }
   end
 
@@ -142,7 +168,10 @@ class PushoverConfig
     "set #{@options.join ' || set '}"
   end
 
-  def 
+  def parse_buffer(buffer)
+    buffer_type = Weechat.buffer_get_string buffer, 'localvar_type'
+    (buffer_type == 'private')
+  end
 end
 
 def weechat_init
@@ -152,8 +181,7 @@ def weechat_init
     '0.0.1',
     'MIT',
     'Send hilight notifications via Pushover',
-    '',
-    ''
+    '', ''
   )
   $config = PushoverConfig.new
   Weechat::WEECHAT_RC_OK
