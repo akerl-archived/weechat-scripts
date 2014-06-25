@@ -30,10 +30,61 @@ require 'yaml'
 class RegexConfig
   attr_reader :path, :rules
 
+  HELPTEXT = '[save] | [load] | [list] | [[add|del] channel pattern]'
+
   def initialize
     @path = Weechat.info_get('weechat_dir', '') + '/regex_highlight.conf'
     @rules = Hash.new { |h, k| h[k] = [] }
     reload if File.exist?(@path)
+    load_hooks
+  end
+
+  def command_hook(_, _, args)
+    case args
+    when 'save' then save
+    when 'load' then reload
+    when 'list' then list
+    when /^add #?(?<channel>[\w]+) (?<regex>.*)/
+      add Regexp.last_match['channel'], Regexp.last_match['regex']
+    when /^del #?(?<channel>[\w]+) (?<regex>.*)/
+      remove Regexp.last_match['channel'], Regexp.last_match['regex']
+    else
+      Weechat.print('', "Syntax: #{HELPTEXT}")
+    end
+    Weechat::WEECHAT_RC_OK
+  end
+
+  def highlight_hook(_, _, modifier_data, string)
+    return string unless modifier_data.match(/irc;\w+\.[#\w]+;.+/)
+    server, channel, tags = parse_modifiers(modifier_data)
+    return string unless match channel, string
+
+    new_tags = tags.join(',').sub 'notify_message', 'notify_highlight'
+    buffer = Weechat.info_get('irc_buffer', "#{server},#{channel}")
+    Weechat.print_date_tags(buffer, 0, new_tags, string)
+    ''
+  end
+
+  private
+
+  def load_hooks
+    Weechat.hook_command(
+      'regex',
+      'Control regex highlights',
+      HELPTEXT,
+      'save/load dump to and load from the config file; list shows current patterns; add/del add and remove patterns',
+      'save || load || list || add %(irc_channels) %- %S || del %(irc_channels) %- %S',
+      'command_hook',
+      ''
+    )
+    Weechat.hook_modifier('weechat_print', 'highlight_hook', '')
+  end
+
+  def parse_modifiers(modifiers)
+    data = modifiers.split ';'
+    tags = data.last.split ','
+    server, channel = data[1].split '.', 2
+    [server, channel, tags]
   end
 
   def save
@@ -93,57 +144,10 @@ def weechat_init
     '',
     ''
   )
-  load_script
-end
-
-def load_script
   $Regex_Highlight = RegexConfig.new
-  load_hooks
   Weechat::WEECHAT_RC_OK
 end
 
-def load_hooks
-  Weechat.hook_command(
-    'regex',
-    'Control regex highlights',
-    '[save] | [load] | [list] | [[add|del] pattern]',
-    'save/load dump to and load from the config file; list shows current patterns; add/del add and remove patterns',
-    'save || load || list || add || del',
-    'command_handler',
-    ''
-  )
-  Weechat.hook_modifier('weechat_print', 'highlight_check', '')
-end
-
-def command_handler(_, _, args)
-  case args
-  when 'save' then $Regex_Highlight.save
-  when 'load' then $Regex_Highlight.reload
-  when 'list' then $Regex_Highlight.list
-  when /^add #?(?<channel>[\w]+) (?<regex>.*)/
-    $Regex_Highlight.add Regexp.last_match['channel'], Regexp.last_match['regex']
-  when /^del #?(?<channel>[\w]+) (?<regex>.*)/
-    $Regex_Highlight.remove Regexp.last_match['channel'], Regexp.last_match['regex']
-  else
-    Weechat.print('', 'Syntax: [save] | [load] | [list] | [[add|del] channel pattern]')
-  end
-  Weechat::WEECHAT_RC_OK
-end
-
-def parse_modifiers(modifiers)
-  data = modifiers.split ';'
-  tags = data.last.split ','
-  server, channel = data[1].split '.', 2
-  [server, channel, tags]
-end
-
-def highlight_check(_, _, modifier_data, string)
-  return string unless modifier_data.match(/irc;\w+\.[#\w]+;.+/)
-  server, channel, tags = parse_modifiers(modifier_data)
-  return string unless $Regex_Highlight.match channel, string
-
-  new_tags = tags.join(',').sub 'notify_message', 'notify_highlight'
-  buffer = Weechat.info_get('irc_buffer', "#{server},#{channel}")
-  Weechat.print_date_tags(buffer, 0, new_tags, string)
-  ''
-end
+require 'forwardable'
+extend Forwardable
+def_delegators :$Regex_Highlight, :highlight_hook, :command_hook
