@@ -29,7 +29,7 @@ DEFAULTS = {
   userkey: nil,
   appkey: nil,
   devicename: nil,
-  interval: '20', # seconds
+  interval: '10', # seconds
   priority: '1',
   onlywhenaway: 0,
   enabled: 1
@@ -67,10 +67,9 @@ class PushoverConfig
       return Weechat::WEECHAT_RC_OK if away_msg && away_msg.length > 0
     end
 
-    is_pm = parse_buffer buffer
-
-    buffer_name = Weechat.buffer_get_string buffer, 'full_name'
+    buffer_name, is_pm = parse_buffer buffer
     @queue << Message.new(buffer_name, nick, message, is_pm)
+    Weechat::WEECHAT_RC_OK
   end
 
   def timer_hook(*_)
@@ -82,6 +81,7 @@ class PushoverConfig
     end
     coalesce_messages if @rate_calc < 0
     send_messages
+    Weechat::WEECHAT_RC_OK
   end
 
   private
@@ -91,9 +91,13 @@ class PushoverConfig
   end
 
   def send_messages
-    @queue.drop_while do |message|
+    client = Net::HTTP.new URL.host, URL.port
+    client.use_ssl = true
+    client.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    client.start
+    @queue = @queue.drop_while do |message|
       begin
-        send_message message.buffer, build_message(message), @options[:priority]
+        send_message client, message.buffer, build_message(message), @options[:priority]
         true
       rescue
         false
@@ -108,7 +112,7 @@ class PushoverConfig
     text.slice 0, (500 - message.buffer.length)
   end
 
-  def send_message(buffer, message, priority)
+  def send_message(client, buffer, message, priority)
     data = {
       token: @options[:appkey],
       user: @options[:userkey],
@@ -117,21 +121,19 @@ class PushoverConfig
       priority: priority
     }
     options[:device] = @options[:device] if @options[:device]
-    _send data
+    _send client, data
   end
 
-  def _send(data)
+  def _send(client, data)
     req = Net::HTTP::Post.new URL.path
     req.set_form_data data
-    res = Net::HTTP.new URL.host, URL.port
-    res.use_ssl = true
-    res.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    res.start { |http| http.request req }
+    resp = client.request req
   end
 
   def set(option, value)
     if @options.keys.include? option.to_sym
       @options[option.to_sym] = value
+      Weechat.config_set_plugin option, value
       Weechat.print '', "Pushover: set #{option} to #{value}"
       reload_hooks if [:interval].include? option.to_sym
     else
@@ -140,10 +142,11 @@ class PushoverConfig
   end
 
   def load_options
-    DEFAULTS.each do |key, default|
-      value = Weechat.config_get_plugin key
-      value ||= default
-      instance_variable_set "@#{key}".to_sym, value
+    @options = DEFAULTS.dup
+    @options.each do |key, default|
+      value = Weechat.config_get_plugin key.to_s
+      @options[key] = value if value
+      Weechat.config_set_plugin key.to_s, @options[key]
     end
   end
 
@@ -160,17 +163,18 @@ class PushoverConfig
   end
 
   def reload_hooks
-    @hooks.each_value { |x| Weechat.unload x } if @hooks
+    @hooks.each_value { |x| Weechat.unhook x } if @hooks
     load_hooks
   end
 
   def completion_text
-    "set #{@options.join ' || set '}"
+    "set #{@options.keys.join '|'}"
   end
 
   def parse_buffer(buffer)
-    buffer_type = Weechat.buffer_get_string buffer, 'localvar_type'
-    (buffer_type == 'private')
+    name = Weechat.buffer_get_string(buffer, 'full_name').split('.').last
+    type = Weechat.buffer_get_string buffer, 'localvar_type'
+    [name, (type == 'private')]
   end
 end
 
@@ -183,10 +187,10 @@ def weechat_init
     'Send hilight notifications via Pushover',
     '', ''
   )
-  $config = PushoverConfig.new
+  $Pushover = PushoverConfig.new
   Weechat::WEECHAT_RC_OK
 end
 
 require 'forwardable'
 extend Forwardable
-def_delegators :$config, :message_hook, :command_hook, :timer_hook
+def_delegators :$Pushover, :message_hook, :command_hook, :timer_hook

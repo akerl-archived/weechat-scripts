@@ -26,7 +26,7 @@
 
 MATCHER = /^\x1905--\t\x1928\[\x1914(?<name>\S+)\x1928\] \x1901is away: (?<msg>.*)$/
 
-$seen = {}
+$squelch_away_seen = {}
 
 def weechat_init
   Weechat.register(
@@ -54,7 +54,7 @@ def squelch_check(_, _, mod_data, line)
 end
 
 def already_seen?(name, msg)
-  return true if $seen[name] == msg
-  $seen[name] = msg
+  return true if $squelch_away_seen[name] == msg
+  $squelch_away_seen[name] = msg
   false
 end

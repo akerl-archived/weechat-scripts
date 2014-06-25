@@ -97,7 +97,7 @@ def weechat_init
 end
 
 def load_script
-  $config = RegexConfig.new
+  $Regex_Highlight = RegexConfig.new
   load_hooks
   Weechat::WEECHAT_RC_OK
 end
@@ -117,13 +117,13 @@ end
 
 def command_handler(_, _, args)
   case args
-  when 'save' then $config.save
-  when 'load' then $config.reload
-  when 'list' then $config.list
+  when 'save' then $Regex_Highlight.save
+  when 'load' then $Regex_Highlight.reload
+  when 'list' then $Regex_Highlight.list
   when /^add #?(?<channel>[\w]+) (?<regex>.*)/
-    $config.add Regexp.last_match['channel'], Regexp.last_match['regex']
+    $Regex_Highlight.add Regexp.last_match['channel'], Regexp.last_match['regex']
   when /^del #?(?<channel>[\w]+) (?<regex>.*)/
-    $config.remove Regexp.last_match['channel'], Regexp.last_match['regex']
+    $Regex_Highlight.remove Regexp.last_match['channel'], Regexp.last_match['regex']
   else
     Weechat.print('', 'Syntax: [save] | [load] | [list] | [[add|del] channel pattern]')
   end
@@ -140,7 +140,7 @@ end
 def highlight_check(_, _, modifier_data, string)
   return string unless modifier_data.match(/irc;\w+\.[#\w]+;.+/)
   server, channel, tags = parse_modifiers(modifier_data)
-  return string unless $config.match channel, string
+  return string unless $Regex_Highlight.match channel, string
 
   new_tags = tags.join(',').sub 'notify_message', 'notify_highlight'
   buffer = Weechat.info_get('irc_buffer', "#{server},#{channel}")
