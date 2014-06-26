@@ -94,19 +94,18 @@ end
 ##
 # Message object
 class PushoverMessage
-  attr_reader :buffer, :nick, :text, :is_pm
+  attr_reader :title, :text, :is_pm
 
   def initialize(buffer, nick, text)
-    @buffer, @is_pm = PushoverMessage.parse_buffer buffer
-    @nick = nick
-    @text = text
+    @title, @is_pm = PushoverMessage.parse_buffer buffer
+    @text = "#{"<#{nick}> " unless @is_pm}#{text}"
+    trim!
   end
 
-  def clean_text
-    clean = ''
-    clean << "<#{@nick}> " unless @is_pm
-    clean << @text
-    clean.slice 0, (500 - @buffer.length)
+  private
+
+  def trim!
+    @text = "#{text.slice(0, 497 - @title.length)}..." if @text.length > 500
   end
 
   class << self
@@ -115,6 +114,34 @@ class PushoverMessage
       type = Weechat.buffer_get_string(buffer, 'localvar_type')
       [name, (type == 'private')]
     end
+  end
+end
+
+##
+# Coalesced message, used to conserve API requests
+class PushoverMessageBundle < PushoverMessage
+  def initialize(messages)
+    @is_pm = messages.any? { |x| x.is_pm }
+    if messages.map(&:title).uniq.size == 1
+      parse_single_author
+    else
+      parse_multi_author
+    end
+    trim!
+  end
+
+  private
+
+  def parse_single_author
+    @title = messages.first.title
+    @text = messages.map(&:text).join(' || ')
+  end
+
+  def parse_multi_author
+    @title = 'Messages from multiple sources'
+    counts = Hash[messages.group_by(&:title).map { |k, v| [k, v.size] }]
+    counts.sort!
+    @text = counts.reduce('') { |a, (k, v)| a << "#{k} (#{v}), " }[0..-3]
   end
 end
 
