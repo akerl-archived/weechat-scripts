@@ -169,13 +169,15 @@ class PushoverConfig
   end
 
   def message_hook(*args)
-    buffer, nick, text = args.values_at(1, 6, 7)
+    buffer, is_highlight, nick, text = args.values_at(1, 5, 6, 7)
+    is_pm = (Weechat.buffer_get_string(buffer, 'localvar_type') == 'private')
+    return Weechat::WEECHAT_RC_OK if is_highlight.to_i.zero? && !is_pm
     if Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
       return Weechat::WEECHAT_RC_OK
     end
     unless Weechat.config_string_to_boolean(@options[:onlywhenaway]).to_i.zero?
       away_msg = Weechat.buffer_get_string buffer, 'localvar_away'
-      return Weechat::WEECHAT_RC_OK if away_msg && away_msg.length > 0
+      return Weechat::WEECHAT_RC_OK unless away_msg && away_msg.length > 0
     end
     @queue << PushoverMessage.new(buffer, nick, text)
     Weechat::WEECHAT_RC_OK
@@ -202,8 +204,8 @@ class PushoverConfig
     client = PushoverClient.new @options
     @queue = @queue.drop_while do |message|
       resp = client.send(
-        title: message.buffer,
-        message: message.clean_text,
+        title: message.title,
+        message: message.text,
         priority: @options[message.is_pm ? :pm_priority : :hilight_priority]
       )
       parse_response resp
@@ -258,6 +260,7 @@ class PushoverConfig
   end
 
   def load_hooks
+    tags = 'notify_message,notify_private,notify_highlight'
     @hooks.each_value { |x| Weechat.unhook x } if @hooks
     @hooks = {
       command: Weechat.hook_command(
@@ -265,7 +268,7 @@ class PushoverConfig
         'set OPTION VALUE', '', "#{completion_text}",
         'command_hook', ''
       ),
-      message: Weechat.hook_print('', 'irc_privmsg', '', 1, 'message_hook', ''),
+      message: Weechat.hook_print('', tags, '', 1, 'message_hook', ''),
       timer: Weechat.hook_timer(@options[:interval].to_i * 1000, 0, 0, 'timer_hook', '')
     }
   end
