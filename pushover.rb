@@ -25,7 +25,7 @@
 
 require 'net/https'
 
-DEFAULTS = {
+PUSHOVER_DEFAULTS = {
   userkey: nil,
   appkey: nil,
   devicename: nil,
@@ -35,7 +35,7 @@ DEFAULTS = {
   onlywhenaway: '0',
   enabled: '1'
 }
-URL = URI.parse('https://api.pushover.net/1/messages.json')
+PUSHOVER_URL = URI.parse('https://api.pushover.net/1/messages.json')
 
 ##
 # API rate limit calculator
@@ -64,7 +64,7 @@ class PushoverClient
   def send(params)
     data = @template.dup
     data.merge! params
-    req = Net::HTTP::Post.new URL.path
+    req = Net::HTTP::Post.new PUSHOVER_URL.path
     req.set_form_data data
     @client.request req
   end
@@ -84,7 +84,7 @@ class PushoverClient
   end
 
   def create_client
-    @client = Net::HTTP.new URL.host, URL.port
+    @client = Net::HTTP.new PUSHOVER_URL.host, PUSHOVER_URL.port
     @client.use_ssl = true
     @client.verify_mode = OpenSSL::SSL::VERIFY_PEER
     @client.start
@@ -251,7 +251,7 @@ class PushoverConfig
   end
 
   def load_options
-    @options = DEFAULTS.dup
+    @options = PUSHOVER_DEFAULTS.dup
     @options.each_key do |key|
       value = Weechat.config_get_plugin key.to_s
       @options[key] = value if value
