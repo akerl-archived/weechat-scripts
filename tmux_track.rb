@@ -49,7 +49,7 @@ class TmuxTracker
   private
 
   def update(state)
-    Weechat.config_set 'weechat.state.attached', state
+    Weechat.config_set_plugin 'attached', state
   end
 
   def attached
