@@ -24,7 +24,7 @@
 #   0.0.1 - Initial functionality
 
 TMUX_DEFAULTS = {
-  interval: 5
+  interval: '5'
 }
 
 ##
@@ -78,7 +78,7 @@ end
 
 def weechat_init
   Weechat.register(
-    'tmux_tracker', 'Les Aker <me@lesaker.org>',
+    'tmux_track', 'Les Aker <me@lesaker.org>',
     '0.0.1', 'MIT',
     'Update weechat variable based on tmux state',
     '', ''
