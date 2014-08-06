@@ -39,7 +39,7 @@ class TmuxTracker
   def timer_hook(*_)
     if ENV['TMUX']
       socket = ENV['TMUX'].split(',').first
-      File.executable?(s) ? attached : detached
+      File.executable?(socket) ? attached : detached
     else
       attached
     end
