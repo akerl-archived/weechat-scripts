@@ -49,6 +49,7 @@ class TmuxTracker
   private
 
   def update(state)
+    Weechat.print('', "I am changing state to #{state}")
     Weechat.config_set_plugin 'attached', state
   end
 
@@ -64,7 +65,7 @@ class TmuxTracker
     @options = TMUX_DEFAULTS.dup
     @options.each_key do |key|
       value = Weechat.config_get_plugin key.to_s
-      @options[key] = value if value
+      @options[key] = value if value && value.length
       Weechat.config_set_plugin key.to_s, @options[key]
     end
   end
