@@ -176,8 +176,8 @@ class PushoverConfig
       return Weechat::WEECHAT_RC_OK
     end
     unless Weechat.config_string_to_boolean(@options[:onlywhenattached]).to_i.zero?
-      attached? = Weechat.config_get('weechat.state.attached').to_i.nonzero?
-      return Weechat::WEECHAT_RC_OK unless attached?
+      attached = Weechat.config_get('weechat.state.attached').to_i.nonzero?
+      return Weechat::WEECHAT_RC_OK unless attached
     end
     @queue << PushoverMessage.new(buffer, nick, text)
     Weechat::WEECHAT_RC_OK
