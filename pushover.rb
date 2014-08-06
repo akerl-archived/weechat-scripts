@@ -32,7 +32,7 @@ PUSHOVER_DEFAULTS = {
   interval: '10', # seconds
   pm_priority: '1',
   hilight_priority: '1',
-  onlywhenaway: '0',
+  onlywhenattached: '0',
   enabled: '1'
 }
 PUSHOVER_URL = URI.parse('https://api.pushover.net/1/messages.json')
@@ -175,9 +175,9 @@ class PushoverConfig
     if Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
       return Weechat::WEECHAT_RC_OK
     end
-    unless Weechat.config_string_to_boolean(@options[:onlywhenaway]).to_i.zero?
-      away_msg = Weechat.buffer_get_string buffer, 'localvar_away'
-      return Weechat::WEECHAT_RC_OK unless away_msg && away_msg.length > 0
+    unless Weechat.config_string_to_boolean(@options[:onlywhenattached]).to_i.zero?
+      attached? = Weechat.config_get('weechat.state.attached').to_i.nonzero?
+      return Weechat::WEECHAT_RC_OK unless attached?
     end
     @queue << PushoverMessage.new(buffer, nick, text)
     Weechat::WEECHAT_RC_OK
