@@ -199,7 +199,7 @@ class PushoverConfig
   private
 
   def coalesce_messages
-    # Dummy method for now
+    @queue = [PushoverMessageBundle.new(@queue)]
   end
 
   def send_messages
