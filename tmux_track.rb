@@ -29,8 +29,9 @@ TMUX_DEFAULTS = {
 
 ##
 # Handler for tracking tmux
-class TmuxTracker
+class TmuxTrack
   def initialize
+    @state = nil
     load_options
     load_hooks
     timer_hook
@@ -49,6 +50,8 @@ class TmuxTracker
   private
 
   def update(state)
+    return if @state == state
+    @state = state
     Weechat.print('', "I am changing state to #{state}")
     Weechat.config_set_plugin 'attached', state
   end
@@ -84,10 +87,10 @@ def weechat_init
     'Update weechat variable based on tmux state',
     '', ''
   )
-  $Tmux = TmuxTracker.new
+  $Tmux = TmuxTrack.new
   Weechat::WEECHAT_RC_OK
 end
 
 require 'forwardable'
 extend Forwardable
-def_delegators :$Pushover, :timer_hook
+def_delegators :$Tmux, :timer_hook
