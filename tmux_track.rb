@@ -52,7 +52,6 @@ class TmuxTrack
   def update(state)
     return if @state == state
     @state = state
-    Weechat.print('', "I am changing state to #{state}")
     Weechat.config_set_plugin 'attached', state
   end
 
