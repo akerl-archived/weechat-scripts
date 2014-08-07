@@ -176,7 +176,9 @@ class PushoverConfig
       return Weechat::WEECHAT_RC_OK
     end
     unless Weechat.config_string_to_boolean(@options[:onlywhendetached]).to_i.zero?
-      attached = Weechat.config_get('weechat.state.attached').to_i.nonzero?
+      attached = Weechat.config_string(
+        Weechat.config_get('plugins.var.ruby.tmux_track.attached')
+      ).to_i.nonzero?
       return Weechat::WEECHAT_RC_OK if attached
     end
     @queue << PushoverMessage.new(buffer, nick, text)
