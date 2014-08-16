@@ -21,6 +21,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Changelog:
+#   0.0.2 - Fix message coalescing
 #   0.0.1 - Initial functionality
 
 require 'net/https'
@@ -123,21 +124,21 @@ class PushoverMessageBundle < PushoverMessage
   def initialize(messages)
     @is_pm = messages.any? { |x| x.is_pm }
     if messages.map(&:title).uniq.size == 1
-      parse_single_author
+      parse_single_author messages
     else
-      parse_multi_author
+      parse_multi_author messages
     end
     trim!
   end
 
   private
 
-  def parse_single_author
+  def parse_single_author(messages)
     @title = messages.first.title
     @text = messages.map(&:text).join(' || ')
   end
 
-  def parse_multi_author
+  def parse_multi_author(messages)
     @title = 'Messages from multiple sources'
     counts = Hash[messages.group_by(&:title).map { |k, v| [k, v.size] }]
     counts.sort!
