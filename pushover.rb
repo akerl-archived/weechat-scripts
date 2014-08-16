@@ -258,7 +258,7 @@ class PushoverConfig
     @options.each_key do |key|
       value = Weechat.config_get_plugin key.to_s
       @options[key] = value if value && value.length.nonzero?
-      Weechat.config_set_plugin key.to_s, @options[key]
+      Weechat.config_set_plugin key.to_s, @options[key].to_s
     end
   end
 
