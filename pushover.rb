@@ -141,7 +141,6 @@ class PushoverMessageBundle < PushoverMessage
   def parse_multi_author(messages)
     @title = 'Messages from multiple sources'
     counts = Hash[messages.group_by(&:title).map { |k, v| [k, v.size] }]
-    counts.sort!
     @text = counts.reduce('') { |a, (k, v)| a << "#{k} (#{v}), " }[0..-3]
   end
 end
