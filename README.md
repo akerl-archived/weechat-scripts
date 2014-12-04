@@ -17,6 +17,14 @@ It is controlled via `/regex`, and stores your hilight configuration in its own 
 
 Unlike irssi, Weechat shows every away message it receives from other users. This gets really annoying if you're sending multiple messages to someone. This is going to filter out repeated messages using some kind of timer. Right now it doesn't work.
 
+### pushover
+
+Notification script to send messages as [Pushover](https://pushover.net/) alerts. It is controlled via /pushover.
+
+### tmux_track
+
+Helper script to set an internal variable, so other scripts can tell if tmux is attached.
+
 ## License
 
 These scripts are released under the MIT License. See the bundled LICENSE file for details.
