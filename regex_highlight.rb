@@ -1,5 +1,5 @@
 # regex_highlight.rb
-# rubocop:disable Style/LineLength, Style/GlobalVars, Style/Documentation
+# rubocop:disable Metrics/LineLength, Style/GlobalVars, Style/Documentation
 
 # Copyright (c) 2014 Les Aker <me@lesaker.org>
 

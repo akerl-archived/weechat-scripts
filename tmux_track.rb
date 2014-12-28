@@ -1,5 +1,5 @@
 # tmux_track.rb
-# rubocop:disable Style/LineLength, Style/GlobalVars
+# rubocop:disable Metrics/LineLength, Style/GlobalVars
 #
 # Copyright (c) 2014 Les Aker <me@lesaker.org>
 
