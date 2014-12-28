@@ -212,6 +212,8 @@ class PushoverConfig
       )
       parse_response resp
     end
+  rescue Errno::ETIMEDOUT
+    server_failure!
   end
 
   def parse_response(resp)
