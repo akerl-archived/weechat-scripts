@@ -30,7 +30,7 @@ require 'yaml'
 class RegexConfig
   attr_reader :path, :rules
 
-  HELPTEXT = '[save] | [load] | [list] | [[add|del] channel pattern]'
+  HELPTEXT = '[save] | [reload] | [list] | [[add|del] channel pattern]'
 
   def initialize
     @path = Weechat.info_get('weechat_dir', '') + '/regex_highlight.conf'
@@ -41,9 +41,7 @@ class RegexConfig
 
   def command_hook(_, _, args)
     case args
-    when 'save' then save
-    when 'load' then reload
-    when 'list' then list
+    when /^(save|reload|list)$/ then send(args.to_sym)
     when /^add #?(?<channel>[\w]+) (?<regex>.*)/
       add Regexp.last_match['channel'], Regexp.last_match['regex']
     when /^del #?(?<channel>[\w]+) (?<regex>.*)/
@@ -73,7 +71,7 @@ class RegexConfig
       'Control regex highlights',
       HELPTEXT,
       'save/load dump to and load from the config file; list shows current patterns; add/del add and remove patterns',
-      'save || load || list || add %(irc_channels) %- %S || del %(irc_channels) %- %S',
+      'save || reload || list || add %(irc_channels) %- %S || del %(irc_channels) %- %S',
       'command_hook',
       ''
     )
