@@ -122,7 +122,7 @@ end
 # Coalesced message, used to conserve API requests
 class PushoverMessageBundle < PushoverMessage
   def initialize(messages)
-    @is_pm = messages.any? { |x| x.is_pm }
+    @is_pm = messages.any?(&:is_pm)
     if messages.map(&:title).uniq.size == 1
       parse_single_author messages
     else
