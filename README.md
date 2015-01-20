@@ -1,13 +1,13 @@
 weechat-scripts
 ===============
 
-[![MIT Licensed](http://img.shields.io/badge/license-MIT-green.svg)](https://tldrlegal.com/license/mit-license)
+[![MIT Licensed](http://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://tldrlegal.com/license/mit-license)
 
 My Weechat scripts
 
 ## Scripts
 
-### regex_hilight
+### regex_highlight
 
 This is designed to let Weechat do smarter hilighting, using multiple regexes on a per-channel basis
 
