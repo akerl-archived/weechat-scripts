@@ -21,9 +21,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Changelog:
+#   0.0.3 - Fix encoding error
 #   0.0.2 - Fix message coalescing
 #   0.0.1 - Initial functionality
 
+require 'enc/encdb.so'
 require 'net/https'
 
 PUSHOVER_DEFAULTS = {
@@ -285,7 +287,7 @@ end
 def weechat_init
   Weechat.register(
     'pushover', 'Les Aker <me@lesaker.org>',
-    '0.0.1', 'MIT',
+    '0.0.3', 'MIT',
     'Send hilight notifications via Pushover',
     '', ''
   )
