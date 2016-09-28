@@ -47,7 +47,7 @@ def load_script
 end
 
 def squelch_check(_, _, mod_data, line)
-  return line if mod_data.match('_')
+  return line if mod_data =~ /_/
   result = line.match MATCHER
   return line unless result
   already_seen?(result['name'], result['msg']) ? '' : line

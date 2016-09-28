@@ -30,7 +30,7 @@ require 'yaml'
 class RegexConfig
   attr_reader :path, :rules
 
-  HELPTEXT = '[save] | [load] | [list] | [[add|del] channel pattern]'
+  HELPTEXT = '[save] | [load] | [list] | [[add|del] channel pattern]'.freeze
 
   def initialize
     @path = Weechat.info_get('weechat_dir', '') + '/regex_highlight.conf'
@@ -39,7 +39,7 @@ class RegexConfig
     load_hooks
   end
 
-  def command_hook(_, _, args)
+  def command_hook(_, _, args) # rubocop:disable Metrics/MethodLength
     case args
     when 'save' then save
     when 'load' then reload
@@ -55,7 +55,7 @@ class RegexConfig
   end
 
   def highlight_hook(_, _, modifier_data, string)
-    return string unless modifier_data.match(/irc;\w+\.[#\w]+;.+/)
+    return string unless modifier_data =~ /irc;\w+\.[#\w]+;.+/
     server, channel, tags = parse_modifiers(modifier_data)
     return string unless match channel, string
 

@@ -37,7 +37,7 @@ PUSHOVER_DEFAULTS = {
   hilight_priority: '1',
   onlywhendetached: '1',
   enabled: '1'
-}
+}.freeze
 PUSHOVER_URL = URI.parse('https://api.pushover.net/1/messages.json')
 
 ##
@@ -149,7 +149,7 @@ end
 
 ##
 # Handles message queue and configuration
-class PushoverConfig
+class PushoverConfig # rubocop:disable Metrics/ClassLength
   def initialize
     @queue = []
     @health_check = 200
@@ -170,7 +170,7 @@ class PushoverConfig
     Weechat::WEECHAT_RC_OK
   end
 
-  def message_hook(*args)
+  def message_hook(*args) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     buffer, is_highlight, nick, text = args.values_at(1, 5, 6, 7)
     is_pm = (Weechat.buffer_get_string(buffer, 'localvar_type') == 'private')
     return Weechat::WEECHAT_RC_OK if is_highlight.to_i.zero? && !is_pm
@@ -204,7 +204,7 @@ class PushoverConfig
     @queue = [PushoverMessageBundle.new(@queue)]
   end
 
-  def send_messages
+  def send_messages # rubocop:disable Metrics/MethodLength
     client = PushoverClient.new @options
     @queue = @queue.drop_while do |message|
       resp = client.send(
@@ -265,13 +265,13 @@ class PushoverConfig
     end
   end
 
-  def load_hooks
+  def load_hooks # rubocop:disable Metrics/MethodLength
     tags = 'notify_message,notify_private,notify_highlight'
     @hooks.each_value { |x| Weechat.unhook x } if @hooks
     @hooks = {
       command: Weechat.hook_command(
         'pushover', 'Control Pushover options',
-        'set OPTION VALUE', '', "#{completion_text}",
+        'set OPTION VALUE', '', completion_text,
         'command_hook', ''
       ),
       message: Weechat.hook_print('', tags, '', 1, 'message_hook', ''),

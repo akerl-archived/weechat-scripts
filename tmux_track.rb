@@ -25,7 +25,7 @@
 
 TMUX_DEFAULTS = {
   interval: '5'
-}
+}.freeze
 
 ##
 # Handler for tracking tmux
