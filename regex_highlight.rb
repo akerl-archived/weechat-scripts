@@ -94,7 +94,7 @@ class RegexConfig
 
   def reload
     @rules.clear
-    @rules.merge! File.open(@path) { |file| YAML.load file }
+    @rules.merge! File.open(@path) { |file| YAML.safe_load file }
     Weechat.print('', "Loaded regex_highlight config from #{@path}")
   end
 
