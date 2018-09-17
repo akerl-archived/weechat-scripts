@@ -1,5 +1,4 @@
 # regex_highlight.rb
-# rubocop:disable Metrics/LineLength, Style/GlobalVars, Style/Documentation
 
 # Copyright (c) 2014 Les Aker <me@lesaker.org>
 
@@ -27,6 +26,8 @@
 
 require 'yaml'
 
+##
+# Config object for regex highlighting
 class RegexConfig
   attr_reader :path, :rules
 
@@ -72,7 +73,7 @@ class RegexConfig
       'regex',
       'Control regex highlights',
       HELPTEXT,
-      'save/load dump to and load from the config file; list shows current patterns; add/del add and remove patterns',
+      'save/load dump to and load from the config file; list shows current patterns; add/del add and remove patterns', # rubocop:disable Metrics/LineLength
       'save || load || list || add %(irc_channels) %- %S || del %(irc_channels) %- %S',
       'command_hook',
       ''

@@ -1,5 +1,4 @@
 # pushover.rb
-# rubocop:disable Metrics/LineLength, Style/GlobalVars
 #
 # Copyright (c) 2014 Les Aker <me@lesaker.org>
 
@@ -174,9 +173,7 @@ class PushoverConfig # rubocop:disable Metrics/ClassLength
     buffer, is_highlight, nick, text = args.values_at(1, 5, 6, 7)
     is_pm = (Weechat.buffer_get_string(buffer, 'localvar_type') == 'private')
     return Weechat::WEECHAT_RC_OK if is_highlight.to_i.zero? && !is_pm
-    if Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
-      return Weechat::WEECHAT_RC_OK
-    end
+    return Weechat::WEECHAT_RC_OK if Weechat.config_string_to_boolean(@options[:enabled]).to_i.zero?
     unless Weechat.config_string_to_boolean(@options[:onlywhendetached]).to_i.zero?
       attached = Weechat.config_string(
         Weechat.config_get('plugins.var.ruby.tmux_track.attached')
@@ -246,7 +243,7 @@ class PushoverConfig # rubocop:disable Metrics/ClassLength
   end
 
   def set(option, value)
-    if @options.keys.include? option.to_sym
+    if @options.key? option.to_sym
       @options[option.to_sym] = value
       Weechat.config_set_plugin option, value
       Weechat.print '', "Pushover: set #{option} to #{value}"
