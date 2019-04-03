@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 install: gem install rubocop goodcop
 script: rubocop -D
 notifications:
